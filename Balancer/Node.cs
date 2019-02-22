@@ -8,20 +8,12 @@ namespace Balancer
 {
     public class Node
     {
-        private readonly String name;
+        public readonly String Name;
         public decimal Balance;
-    
-        public string Name => name;
-        public Node(String name)
-        {
-            this.name = name;
-            this.Balance = 0;
-       
-        }
 
-        public Node(String name, decimal balance)
+        public Node(String name, decimal balance = 0)
         {
-            this.name = name;
+            this.Name = name;
             this.Balance = balance;     
         }
 
@@ -29,14 +21,14 @@ namespace Balancer
         {
             var node = obj as Node;
             return node != null &&
-                   name == node.name &&
+                   Name == node.Name &&
                    Balance == node.Balance;
         }
 
         public override int GetHashCode()
         {
             var hashCode = -1374444185;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(name);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + Balance.GetHashCode();
             hashCode = hashCode * -1521134295;
             return hashCode;

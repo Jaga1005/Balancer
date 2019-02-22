@@ -6,7 +6,6 @@ using System.Text;
 namespace Balancer
 {
     /// <summary>
-    /// struct for user
     /// Name - name of paying one, balance - full amount, creditors - list of creditors 
     /// </summary>
     public struct Debt
@@ -31,34 +30,34 @@ namespace Balancer
     public class Graph
     {
         private Dictionary<string, decimal> _creditors;
+
+        public Dictionary<string, decimal> Creditors => _creditors;
         public Graph()
         {
             _creditors = new Dictionary<string, decimal>();
         }
 
-        public Graph(List<Debt> transactions)
+        public Graph(List<Debt> transactions) : this()
         {
-            _creditors = new Dictionary<string, decimal>();
-            transactions.ForEach(t =>
+         transactions.ForEach(t =>
             {
                     t.Creditors.ForEach(c =>
                     {
                         decimal balance = t.Balance /(decimal) t.Creditors.Count;
                         AddTransaction(t.Name, balance, c);
-                    });
-                
+                    });    
             });
         }
 
-        public void Add(String nick, String creditor, decimal balance)
+        public void Add(String name, String creditor, decimal balance)
         {
-            AddTransaction(nick, balance, creditor);
+            AddTransaction(name, balance, creditor);
         }
 
-        public void Add(String nick, List<String> creditors, decimal balance)
+        public void Add(String name, decimal balance, List<String> creditors)
         {
             decimal newBalance = balance / (decimal)creditors.Count;
-            creditors.ForEach(c=> AddTransaction(nick, newBalance, c));
+            creditors.ForEach(c=> AddTransaction(name, newBalance, c));
         }
 
         private void AddTransaction(String name, decimal balance, String creditor)
@@ -71,6 +70,7 @@ namespace Balancer
             {
                 _creditors.Add(name, balance);
             }
+
             if (_creditors.ContainsKey(creditor))
             {
                 _creditors[creditor] -= balance;
@@ -81,39 +81,53 @@ namespace Balancer
             }
         }
 
+        /// <summary>
+        /// Take creditors list and recalculate debs
+        /// </summary>
+        /// <returns>Dictionary<Creditor, List<forWhomPays, howMuchShouldPay>></returns>
         public Dictionary<String, List<Tuple<String, decimal>>> GetSummary()
         {
            List<Node> plus = new List<Node>();
            List<Node> minus = new List<Node>();
 
-            foreach (var key in _creditors.Keys)
+            foreach (var creditor in _creditors.Keys)
             {
-                if (_creditors[key] < 0)
+                if (_creditors[creditor] < 0)
                 {
-                    minus.Add(new Node(key, _creditors[key]));
+                    minus.Add(new Node(creditor, _creditors[creditor]));
                 }
-                else if (_creditors[key] > 0)
+                else if (_creditors[creditor] > 0)
                 {
-                    plus.Add(new Node(key, _creditors[key]));
+                    plus.Add(new Node(creditor, _creditors[creditor]));
                 }
             }
             return RecalculateDebs(plus, minus);
         }
 
+        /// <summary>
+        /// Take max plus balance and min minus balance and add new creditor
+        /// Remove person with 0 balance
+        /// Repeat for all people 
+        /// </summary>
+        /// <param name="plus">people with plus balance</param>
+        /// <param name="minus">peole with minus balance</param>
+        /// <returns></returns>
         private static Dictionary<String, List<Tuple<String, decimal>>> RecalculateDebs(List<Node> plus, List<Node> minus)
         {
             List<Debt> results = new List<Debt>();
+
             while (plus.Count > 0 && minus.Count > 0)
             {
                 plus = plus.OrderByDescending(p => p.Balance).ToList();
                 minus = minus.OrderBy(m => m.Balance).ToList();
+
                 Node plusNode = plus.First();
                 Node minusNode = minus.First();
-                if (plusNode.Balance > -minusNode.Balance)
+                if (plusNode.Balance >= -minusNode.Balance)
                 {
                     plusNode.Balance += minusNode.Balance;
+                    //new Debt(creditor, how many should pay, for whom)
                     results.Add(new Debt(minusNode.Name, -minusNode.Balance, plusNode.Name));
-                    minusNode.Balance = 0;
                     minus.RemoveAt(0);
                     if (plusNode.Balance == 0)
                     {
@@ -122,19 +136,20 @@ namespace Balancer
                 }
                 else
                 {
+                    //new Debt(creditor, how many should pay, for whom)
                     results.Add(new Debt(minusNode.Name, plusNode.Balance, plusNode.Name));
                     minusNode.Balance += plusNode.Balance;
-                    plusNode.Balance = 0;
                     plus.RemoveAt(0);
-                    if (minusNode.Balance == 0)
-                    {
-                        minus.RemoveAt(0);
-                    }
-                }
+                   }
             }
             return ConvertListToDictionary(results);
         }
-
+        
+        /// <summary>
+        /// Convert result list to nice format
+        /// </summary>
+        /// <param name="debts">List of creditors after recalculate</param>
+        /// <returns> Dictionary<Creditor, List<forWhomPays, howMuch>></returns>
         private static Dictionary<String, List<Tuple<String, decimal>>> ConvertListToDictionary(List<Debt> debts)
         {
             Dictionary<String, List<Tuple<String, decimal>>> results = new Dictionary<string, List<Tuple<string, decimal>>>();
@@ -155,7 +170,9 @@ namespace Balancer
 
             return results;
         }
-
+        /// <summary>
+        /// CLear creditors list
+        /// </summary>
         public void ClearAll()
         {
             _creditors.Clear();

@@ -21,21 +21,31 @@ namespace Balancer
                 new Debt("H", (decimal) 5, "D"),
             });
 
-            var list = g.GetSummary();
-          //  list.ForEach(l=> Console.WriteLine(l));
+            Console.WriteLine("Before");
+            PrintCreditorsBefore(g);
 
-            Console.WriteLine("\n\n");
-            ReadDictionary(list);
+            Console.WriteLine();
+            Console.WriteLine("After");
+            ReadDictionary(g.GetSummary());
+        }
+
+        private static void PrintCreditorsBefore(Graph g)
+        {
+            var creditors = g.Creditors.OrderBy(c => c.Key);
+            foreach (var creditor in creditors)
+            {
+                Console.WriteLine(creditor.Key + " " + creditor.Value + "");
+            }
         }
 
         public static void ReadDictionary(Dictionary<String, List<Tuple<String, decimal>>> res)
         {
             foreach (var key in res.Keys)
             {
-                Console.WriteLine(key + ":");
+                Console.WriteLine(key +  " -" + res[key].Sum(r => r.Item2) + ":");
                 res[key].ForEach(r =>
                 {
-                    Console.WriteLine("\t" + r.Item1 + " " + r.Item2 + "zl");
+                    Console.WriteLine("\t" + r.Item1 + " " + r.Item2 + "");
                 });
             }
         }
